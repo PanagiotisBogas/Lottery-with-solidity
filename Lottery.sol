@@ -172,17 +172,4 @@ contract Lottery {
         if (stage == Stage.Bid) {stage = Stage.Done; return;}
     }
 
-
-    // Dokimastikes Functions gia na doume an ontws adiasan ta arrays (TEST FUNCTIONS FOR DEBUGGING)
-    /*function itemsLength() public view returns(uint){
-        return items.length;
-    }
-
-    function biddersLength() public view returns(uint){
-        return bidders.length;
-    }
-
-    function winnersLength() public view returns(uint){
-        return winners.length;
-    }*/
 }
