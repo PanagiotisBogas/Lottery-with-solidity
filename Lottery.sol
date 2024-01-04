@@ -18,10 +18,10 @@ contract Lottery {
     enum Stage {Init, Reg, Bid, Done}
     Stage public stage;
     event Winner(address winner,  uint itemId);
-    mapping(address => Person) public  tokenDetails; // διεύθυνση παίκτη
+    mapping(address => Person) tokenDetails; // διεύθυνση παίκτη
     Person [] public bidders;
     Item [] public items;
-    
+    uint public currentLotery = 1;
     address[] public winners; // πίνακας νικητών - η τιμή 0 δηλώνει πως δεν υπάρχει νικητής
     address public beneficiary; // ο πρόεδρος του συλλόγου και ιδιοκτήτης του smart contract
     uint bidderCount = 1; // πλήθος των εγγεγραμένων παικτών
@@ -71,16 +71,19 @@ contract Lottery {
         _;
     }
 
+    //Require stage to be Reg
     modifier regStage(){
         require(stage == Stage.Reg, "At this stage only registration is allowed");
         _;
     }
 
+    //Require stage to be Bid
     modifier bidStage(){
         require(stage == Stage.Bid, "At this stage only bidding is allowed");
         _;
     }
 
+    //Require stage to be Done
     modifier doneStage(){
         require(stage == Stage.Done,  "Registration and bidding stage has ended. Time to reveal the winners");
         _;
@@ -99,16 +102,17 @@ contract Lottery {
         bidderCount++; 
     }
 
-    //This function gets the contracts balance
-    function getBalance() public view returns(uint){
+    //This function gets the contracts balance (Δοκιμαστική συνάρτηση)
+    /*function getBalance() public view returns(uint){
         return address(this).balance;
-    }
+    }*/
 
     // This function generates a pseudorandom number
     function random() public view returns(uint){
         return uint(keccak256(abi.encodePacked(block.prevrandao, block.timestamp, bidders.length)));
     }
 
+    //Players bid an amount of tickets to an item
     function bid(uint _itemId, uint _count) public payable onlyBidders bidderHasEnoughTokens bidderIsRegistered bidStage{ // Ποντάρει _count λαχεία στο αντικείμενο _itemId 
          
         require(items[_itemId].itemId == _itemId, "Item does not exist");
@@ -122,7 +126,7 @@ contract Lottery {
         
     }
     
-    
+    // Reveal the winner of an item
     function revealWinners(uint _itemNum) public onlyOwner doneStage{
             require(items[_itemNum].itemTokens.length > 0);
             require(items[_itemNum].winner == emptyAddr);
@@ -141,7 +145,6 @@ contract Lottery {
             }
 
             emit Winner(winner, items[_itemNum].itemId);
-
     }
     
     //The contract owner can withdraw the contract's funds to his wallet
@@ -150,35 +153,36 @@ contract Lottery {
     }
 
 
-    //The contract owner can "clear" the items, bidders and winners arrays
-    function reset() public onlyOwner{
+  //The contract owner can "clear" the items, bidders and winners arrays
+  function reset() public payable  onlyOwner{
 
-        stage == Stage.Reg;
+        stage = Stage.Init;
 
-        for (uint i = 0; i<items.length; i++) 
-        {
-            items.pop();
-        }
+        delete items;
+        delete bidders;
+        delete winners;
 
-        for (uint i = 0; i<bidders.length; i++) 
-        {
-            bidders.pop();
-        }
-
-        for (uint i = 0; i<winners.length; i++) 
-        {
-            winners.pop();
-        }
-
+        currentLotery++;
     }
 
-    function advanceState() public onlyOwner{
+    // Pame sto epomeno stage
+    function advanceStage() public onlyOwner{
         if (stage == Stage.Init) {stage = Stage.Reg; return;}
         if (stage == Stage.Reg) {stage = Stage.Bid; return;}
         if (stage == Stage.Bid) {stage = Stage.Done; return;}
     }
 
 
+    // Dokimastikes Functions gia na doume an ontws adiasan ta arrays (TEST FUNCTIONS FOR DEBUGGING)
+    /*function itemsLength() public view returns(uint){
+        return items.length;
+    }
 
+    function biddersLength() public view returns(uint){
+        return bidders.length;
+    }
 
+    function winnersLength() public view returns(uint){
+        return winners.length;
+    }*/
 }
